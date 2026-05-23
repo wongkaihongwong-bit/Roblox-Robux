@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robux 游戏系统</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body{
+            background-color: #1f1f1f;
+            color: #fff;
+            min-height: 100vh;
+            padding: 15px;
+            position: relative;
+        }
+        .container{
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .header{
+            background: #e2231a;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .header h1{
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+        .box{
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #444;
+        }
+        input,select{
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background: #1a1a1a;
+            color: #fff;
+            margin: 8px 0;
+            outline: none;
+        }
+        .btn{
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+        }
+        .btn-reg{background:#0099ff;color:#fff;}
+        .btn-login{background:#00c853;color:#fff;}
+        .btn-switch{background:#666;color:#fff;}
+        .btn-upgrade{background:#9c27b0;color:#fff;}
+        .avatar-select{
+            display:flex;
+            gap:10px;
+            justify-content:center;
+            margin:10px 0;
+        }
+        .avatar-item{
+            width:80px;
+            height:80px;
+            border-radius:8px;
+            border:2px solid transparent;
+            cursor:pointer;
+            overflow:hidden;
+        }
+        .avatar-item.active{
+            border-color:#00d8ff;
+        }
+        .avatar-item img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+        .balance-card{
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align:center;
+        }
+        .robux-num{
+            font-size: 32px;
+            color: #00d8ff;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+        .luck-info{
+            background:#383838;
+            border-radius:10px;
+            padding:12px;
+            margin:10px 0;
+            text-align:center;
+        }
+        .bank-card{
+            width:100%;
+            max-width:320px;
+            margin:20px auto;
+            background:linear-gradient(135deg,#0099ff,#00d8ff);
+            border-radius:16px;
+            padding:20px;
+            text-align:center;
+            cursor:pointer;
+            box-shadow:0 0 20px #0099ff80;
+            transition:transform 0.2s;
+            position:relative;
+            overflow:hidden;
+        }
+        .bank-card:active{
+            transform:scale(0.95);
+        }
+        .bank-card h2{
+            font-size:24px;
+            margin-bottom:10px;
+        }
+        .float-robux{
+            position:absolute;
+            font-weight:bold;
+            color:#00ff99;
+            font-size:20px;
+            pointer-events:none;
+            animation:floatUp 1s ease-out forwards;
+            opacity:0;
+        }
+        @keyframes floatUp{
+            0%{opacity:1;transform:translateY(0) scale(0.8);}
+            50%{transform:translateY(-30px) scale(1.2);}
+            100%{opacity:0;transform:translateY(-60px) scale(1);}
+        }
+        .tab-box{
+            display: flex;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .tab-item{
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #383838;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .tab-item.active{
+            background: #e2231a;
+        }
+        .panel{
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 15px;
+            display: none;
+        }
+        .panel.show{display:block;}
+        .shop-item{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:12px;
+            border-bottom:1px solid #444;
+            border-radius:8px;
+            margin:8px 0;
+            cursor:pointer;
+        }
+        .shop-img{
+            width:70px;
+            height:70px;
+            border-radius:6px;
+            object-fit:cover;
+        }
+        .pop-mask{
+            position: fixed;
+            top:0;left:0;
+            width:100%;height:100%;
+            background:#00000080;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:999;
+        }
+        .pop-box{
+            background:#2d2d2d;
+            padding:25px;
+            border-radius:12px;
+            width:85%;
+            text-align:center;
+        }
+        .hidden{display:none !important;}
+        .tip-red{color:#ff5555;font-size:14px;margin:5px 0;}
+        .tip-green{color:#4cd964;font-size:14px;margin:5px 0;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Robux 游戏系统</h1>
+            <p>注册账号即可体验全部功能</p>
+        </div>
+
+        <!-- 注册界面 -->
+        <div class="box" id="regBox">
+            <h3>账号注册</h3>
+            <input type="text" id="regName" placeholder="设置用户名（无空格、特殊符号）">
+            <input type="password" id="regPwd" placeholder="设置登录密码">
+            <select id="sexSel">
+                <option value="">选择性别</option>
+                <option value="male">男生</option>
+                <option value="female">女生</option>
+            </select>
+            <p>选择培根头形象</p>
+            <div class="avatar-select">
+                <div class="avatar-item active" data-avatar="boy" onclick="chooseAvatar(this)">
+                    <img src="https://picsum.photos/id/91/80/80" alt="培根男孩">
+                </div>
+                <div class="avatar-item" data-avatar="girl" onclick="chooseAvatar(this)">
+                    <img src="https://picsum.photos/id/65/80/80" alt="培根女孩">
+                </div>
+            </div>
+            <p class="tip-red" id="regTip"></p>
+            <button class="btn btn-reg" onclick="register()">完成注册</button>
+            <button class="btn btn-switch" onclick="switchLogin()">已有账号？去登录</button>
+        </div>
+
+        <!-- 登录界面 -->
+        <div class="box hidden" id="loginBox">
+            <h3>账号登录</h3>
+            <input type="text" id="loginName" placeholder="输入用户名">
+            <input type="password" id="loginPwd" placeholder="输入密码">
+            <p class="tip-red" id="loginTip"></p>
+            <button class="btn btn-login" onclick="login()">登录进入</button>
+            <button class="btn btn-switch" onclick="switchReg()">没有账号？去注册</button>
+        </div>
+
+        <!-- 主游戏界面 -->
+        <div id="mainPage" class="hidden">
+            <div class="balance-card">
+                <p>当前账户余额</p>
+                <div class="robux-num" id="robuxCount">0</div>
+                <p id="adminMark"></p>
+            </div>
+
+            <div class="luck-info">
+                <p>运气倍率：<span id="luckMult">1</span>x</p>
+                <p class="tip-green">等级越高，每次点击获得越多</p>
+                <button class="btn btn-upgrade" id="upgradeBtn" onclick="upgradeLuck()">
+                    升级运气（下一级 <span id="nextCost">100</span> Robux）
+                </button>
+            </div>
+
+            <!-- Bank 卡 -->
+            <div class="bank-card" id="bankCard" onclick="clickBankCard()">
+                <h2>💳 Bank 卡</h2>
+                <p>点击获取 Robux</p>
+            </div>
+
+            <div class="tab-box">
+                <div class="tab-item active" onclick="changeTab('record',this)">领取记录</div>
+                <div class="tab-item" onclick="changeTab('shop',this)">兑换商城</div>
+                <div class="tab-item" onclick="changeTab('info',this)">个人信息</div>
+            </div>
+
+            <div class="panel show" id="record">
+                <div id="recordList">
+                    <p class="tip-red">暂无记录</p>
+                </div>
+            </div>
+
+            <div class="panel" id="shop">
+                <div class="shop-item" onclick="exchange('稀有角色皮肤',500)">
+                    <img class="shop-img" src="https://picsum.photos/id/36/70/70" alt="皮肤">
+                    <div>
+                        <p>稀有角色皮肤</p>
+                        <p class="tip-red">兑换消耗：500 Robux</p>
+                    </div>
+                </div>
+                <div class="shop-item" onclick="exchange('限定武器配饰',280)">
+                    <img class="shop-img" src="https://picsum.photos/id/42/70/70" alt="配饰">
+                    <div>
+                        <p>限定武器配饰</p>
+                        <p class="tip-red">兑换消耗：280 Robux</p>
+                    </div>
+                </div>
+                <div class="shop-item" onclick="exchange('专属头像框',180)">
+                    <img class="shop-img" src="https://picsum.photos/id/60/70/70" alt="头像框">
+                    <div>
+                        <p>专属头像框</p>
+                        <p class="tip-red">兑换消耗：180 Robux</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" id="info">
+                <p>用户名：<span id="showName"></span></p>
+                <p>性别：<span id="showSex"></span></p>
+                <p>运气等级：<span id="showLuck">1</span>x</p>
+                <button class="btn btn-switch" style="margin-top:15px" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+
+        <!-- 弹窗提示 -->
+        <div class="pop-mask" id="popMask">
+            <div class="pop-box">
+                <p id="popText"></p>
+                <button class="btn btn-login" style="margin-top:15px" onclick="closePop()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 预置管理员账号
+        const ADMIN_NAME = "adminpeigen";
+        const ADMIN_PWD = "peigen123456";
+        let userList = JSON.parse(localStorage.getItem("userData")) || [];
+        let hasAdmin = userList.some(u=>u.name === ADMIN_NAME);
+        if(!hasAdmin){
+            userList.push({
+                name:ADMIN_NAME,
+                pwd:ADMIN_PWD,
+                sex:"male",
+                avatar:"boy",
+                robux:999999999,
+                luck:1,
+                isAdmin:true,
+                record:[]
+            });
+            localStorage.setItem("userData",JSON.stringify(userList));
+        }
+
+        let nowUser = null;
+        let selectAvatar = "boy";
+
+        // 形象选择
+        function chooseAvatar(el){
+            document.querySelectorAll(".avatar-item").forEach(i=>i.classList.remove("active"));
+            el.classList.add("active");
+            selectAvatar = el.dataset.avatar;
+        }
+
+        // 切换注册登录
+        function switchLogin(){
+            document.getElementById("regBox").classList.add("hidden");
+            document.getElementById("loginBox").classList.remove("hidden");
+        }
+        function switchReg(){
+            document.getElementById("loginBox").classList.add("hidden");
+            document.getElementById("regBox").classList.remove("hidden");
+        }
+
+        // 用户名合法性校验
+        function checkUserName(name){
+            if(name.includes(" ")) return "用户名不能包含空格";
+            let reg = /^[a-zA-Z0-9_]{3,16}$/;
+            if(!reg.test(name)) return "仅支持字母、数字、下划线，3-16位";
+            let badWord = ["垃圾","傻逼","脏话","违规"];
+            for(let w of badWord){
+                if(name.includes(w)) return "用户名包含违规词汇";
+            }
+            let repeat = userList.some(u=>u.name === name);
+            if(repeat) return "用户名已被注册";
+            return "";
+        }
+
+        // 注册账号
+        function register(){
+            let name = document.getElementById("regName").value.trim();
+            let pwd = document.getElementById("regPwd").value.trim();
+            let sex = document.getElementById("sexSel").value;
+            let tipDom = document.getElementById("regTip");
+            tipDom.innerText = "";
+
+            let checkRes = checkUserName(name);
+            if(checkRes){
+                tipDom.innerText = checkRes;
+                return;
+            }
+            if(!pwd || pwd.length < 6){
+                tipDom.innerText = "密码至少6位字符";
+                return;
+            }
+            if(!sex){
+                tipDom.innerText = "请选择性别";
+                return;
+            }
+
+            let newUser = {
+                name:name,
+                pwd:pwd,
+                sex:sex,
+                avatar:selectAvatar,
+                robux:0,
+                luck:1,
+                isAdmin:false,
+                record:[]
+            };
+            userList.push(newUser);
+            localStorage.setItem("userData",JSON.stringify(userList));
+            showPop("注册成功！前往登录即可");
+            switchLogin();
+        }
+
+        // 登录账号
+        function login(){
+            let name = document.getElementById("loginName").value.trim();
+            let pwd = document.getElementById("loginPwd").value.trim();
+            let tipDom = document.getElementById("loginTip");
+            tipDom.innerText = "";
+
+            let findUser = userList.find(u=>u.name===name && u.pwd===pwd);
+            if(!findUser){
+                tipDom.innerText = "用户名或密码错误";
+                return;
+            }
+            // 修复旧数据：如果robux或luck是undefined/NaN，重置为默认值
+            if(isNaN(findUser.robux) || findUser.robux === undefined){
+                findUser.robux = 0;
+            }
+            if(isNaN(findUser.luck) || findUser.luck === undefined){
+                findUser.luck = 1;
+            }
+            nowUser = findUser;
+            refreshMain();
+            document.getElementById("loginBox").classList.add("hidden");
+            document.getElementById("mainPage").classList.remove("hidden");
+        }
+
+        // 刷新主页数据
+        function refreshMain(){
+            // 强制转换为数字，避免显示NaN
+            const robux = Number(nowUser.robux) || 0;
+            const luck = Number(nowUser.luck) || 1;
+
+            document.getElementById("robuxCount").innerText = robux;
+            document.getElementById("showName").innerText = nowUser.name;
+            document.getElementById("showSex").innerText = nowUser.sex==="male"?"男生":"女生";
+            document.getElementById("adminMark").innerText = nowUser.isAdmin?"🔴 管理员权限":"";
+            document.getElementById("luckMult").innerText = luck;
+            document.getElementById("showLuck").innerText = luck;
+            document.getElementById("nextCost").innerText = getNextCost(luck);
+            renderRecord();
+        }
+
+        // 下一级升级费用（传入luck避免用错变量）
+        function getNextCost(luckLevel){
+            return Math.floor(100 * Math.pow(1.5, luckLevel - 1));
+        }
+
+        // 升级运气
+        function upgradeLuck(){
+            if(nowUser.isAdmin){
+                showPop("管理员无需升级，已拥有最高运气");
+                return;
+            }
+            const luck = Number(nowUser.luck) || 1;
+            const cost = getNextCost(luck);
+            const robux = Number(nowUser.robux) || 0;
+
+            if(robux < cost){
+                showPop(`Robux 不足！升级需要 ${cost} Robux`);
+                return;
+            }
+            nowUser.robux = robux - cost;
+            nowUser.luck = luck + 1;
+            nowUser.record.push(`运气升级到 ${nowUser.luck}x，消耗 ${cost} Robux`);
+            saveUser();
+            refreshMain();
+            showPop(`运气升级成功！当前 ${nowUser.luck}x`);
+        }
+
+        // 点击 Bank 卡
+        function clickBankCard(){
+            const luck = Number(nowUser.luck) || 1;
+            const base = Math.floor(Math.random() * 30) + 10; // 基础10~30
+            const gain = Math.floor(base * luck);
+            const currentRobux = Number(nowUser.robux) || 0;
+
+            if(!nowUser.isAdmin){
+                nowUser.robux = currentRobux + gain;
+                nowUser.record.push(`Bank 卡获得 ${gain} Robux`);
+                saveUser();
+            }
+            refreshMain();
+            floatRobuxAnim(gain);
+        }
+
+        // 飘出 Robux 动画
+        function floatRobuxAnim(num){
+            let card = document.getElementById("bankCard");
+            let rect = card.getBoundingClientRect();
+            let el = document.createElement("div");
+            el.className = "float-robux";
+            el.innerText = `+${num} Robux`;
+            el.style.left = (rect.left + rect.width/2 - 50) + "px";
+            el.style.top = (rect.top + rect.height/2) + "px";
+            document.body.appendChild(el);
+            setTimeout(()=>el.remove(),1000);
+        }
+
+        // 标签页切换
+        function changeTab(id,el){
+            document.querySelectorAll(".tab-item").forEach(t=>t.classList.remove("active"));
+            el.classList.add("active");
+            document.querySelectorAll(".panel").forEach(p=>p.classList.remove("show"));
+            document.getElementById(id).classList.add("show");
+        }
+
+        // 商城道具兑换
+        function exchange(name,cost){
+            const currentRobux = Number(nowUser.robux) || 0;
+            if(currentRobux < cost && !nowUser.isAdmin){
+                showPop("游戏币余额不足，无法兑换");
+                return;
+            }
+            if(!nowUser.isAdmin) nowUser.robux = currentRobux - cost;
+            nowUser.record.push(`兑换${name}，消耗${cost}币`);
+            saveUser();
+            refreshMain();
+            showPop(`成功兑换【${name}】`);
+        }
+
+        // 渲染操作记录
+        function renderRecord(){
+            let listDom = document.getElementById("recordList");
+            if(nowUser.record.length===0){
+                listDom.innerHTML = '<p class="tip-red">暂无操作记录</p>';
+                return;
+            }
+            let html = "";
+            nowUser.record.reverse().forEach(item=>{
+                html += `<p style="padding:6px 0;border-bottom:1px solid #333">${item}</p>`;
+            });
+            listDom.innerHTML = html;
+        }
+
+        // 保存用户数据
+        function saveUser(){
+            let idx = userList.findIndex(u=>u.name===nowUser.name);
+            if(idx>-1) userList[idx] = nowUser;
+            localStorage.setItem("userData",JSON.stringify(userList));
+        }
+
+        // 退出登录
+        function logout(){
+            nowUser = null;
+            document.getElementById("mainPage").classList.add("hidden");
+            switchReg();
+        }
+
+        // 弹窗提示
+        function showPop(text){
+            document.getElementById("popText").innerText = text;
+            document.getElementById("popMask").style.display = "flex";
+        }
+        function closePop(){
+            document.getElementById("popMask").style.display = "none";
+        }
+    </script>
+</body>
+</html>
+               
